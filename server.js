@@ -6,7 +6,7 @@ var io = require('socket.io')(server);
 var port = process.env.PORT || 3000;
 
 server.listen(port, "0.0.0.0");
-console.log('on');
+console.log('on ', port);
 var messages = [];
 
 var router = express.Router();
@@ -28,6 +28,12 @@ app.use(function (req, res, next) {
 });
 app.use(router);
 
+function emit(socket, name, data) {
+  socket.emit('action', Object.assign({}, data, {
+    type: name,
+  }));
+}
+
 // Chatroom
 
 // usernames which are currently connected to the chat
@@ -44,37 +50,40 @@ io.on('connection', function (socket) {
     var evt = data.message;
     console.log(evt);
     // we tell the client to execute 'new message'
-    socket.broadcast.emit('RECEIVE_MESSAGE', evt);
+    emit(socket.broadcast, 'RECEIVE_MESSAGE', evt);
+    emit(socket, 'RECEIVE_MESSAGE', evt);
   });
 
   // when the client emits 'CREATE_USER', this listens and executes
   socket.on('CREATE_USER', function (event) {
-    var username = event.user.name;
-    console.log('adding user', username);
+    console.log('create', event);
+    var user = event.user;
+    console.log('adding user', user.username);
     // we store the username in the socket session for this client
-    socket.username = username;
+    socket.user = user;
     // add the client's username to the global list
-    usernames[username] = username;
+    usernames[user.username] = user;
     ++numUsers;
     addedUser = true;
-    socket.emit('LOGIN_USER', event.user);
+    user.username = 'new username';
+    emit(socket, 'LOGIN_USER', user);
     // echo globally (all clients) that a person has connected
-    socket.broadcast.emit('user joined', {
-      username: socket.username,
+    emit(socket.broadcast, 'user joined', {
+      user: socket.user,
       numUsers: numUsers
     });
   });
 
   // when the client emits 'typing', we broadcast it to others
   socket.on('typing', function () {
-    socket.broadcast.emit('typing', {
+    emit(socket.broadcast, 'typing', {
       username: socket.username
     });
   });
 
   // when the client emits 'stop typing', we broadcast it to others
   socket.on('stop typing', function () {
-    socket.broadcast.emit('stop typing', {
+    emit(socket.broadcast, 'stop typing', {
       username: socket.username
     });
   });
@@ -83,11 +92,11 @@ io.on('connection', function (socket) {
   socket.on('disconnect', function () {
     // remove the username from global usernames list
     if (addedUser) {
-      delete usernames[socket.username];
+      delete usernames[socket.user.username];
       --numUsers;
 
       // echo globally that this client has left
-      socket.broadcast.emit('user left', {
+      emit(socket.broadcast, 'user left', {
         username: socket.username,
         numUsers: numUsers
       });
