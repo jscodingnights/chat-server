@@ -34,6 +34,14 @@ function emit(socket, name, data) {
   }));
 }
 
+function on(socket, name, cb) {
+  socket.on('action', (data) => {
+    if (data.type === name) {
+      cb(data);
+    }
+  })
+}
+
 // Chatroom
 
 // usernames which are currently connected to the chat
@@ -45,19 +53,21 @@ io.on('connection', function (socket) {
   var addedUser = false;
 
   // when the client emits 'new message', this listens and executes
-  socket.on('CREATE_MESSAGE', function (data) {
+  on(socket, 'CREATE_MESSAGE', function (data) {
     console.log('creating message', data);
-    var evt = data.message;
-    console.log(evt);
+    var message = data.message;
+    message.date = (new Date).getTime();
+    
     // we tell the client to execute 'new message'
-    emit(socket.broadcast, 'RECEIVE_MESSAGE', evt);
-    emit(socket, 'RECEIVE_MESSAGE', evt);
+    emit(socket.broadcast, 'RECEIVE_MESSAGE', { message });
+    emit(socket, 'RECEIVE_MESSAGE', { message });
   });
 
   // when the client emits 'CREATE_USER', this listens and executes
-  socket.on('CREATE_USER', function (event) {
+  on(socket, 'CREATE_USER', function (event) {
     console.log('create', event);
     var user = event.user;
+    user.created = (new Date).getTime();
     console.log('adding user', user.username);
     // we store the username in the socket session for this client
     socket.user = user;
@@ -66,7 +76,7 @@ io.on('connection', function (socket) {
     ++numUsers;
     addedUser = true;
     user.username = 'new username';
-    emit(socket, 'LOGIN_USER', user);
+    emit(socket, 'LOGIN_USER', { user });
     // echo globally (all clients) that a person has connected
     emit(socket.broadcast, 'user joined', {
       user: socket.user,
@@ -75,14 +85,14 @@ io.on('connection', function (socket) {
   });
 
   // when the client emits 'typing', we broadcast it to others
-  socket.on('typing', function () {
+  on(socket, 'typing', function () {
     emit(socket.broadcast, 'typing', {
       username: socket.username
     });
   });
 
   // when the client emits 'stop typing', we broadcast it to others
-  socket.on('stop typing', function () {
+  on(socket, 'stop typing', function () {
     emit(socket.broadcast, 'stop typing', {
       username: socket.username
     });
