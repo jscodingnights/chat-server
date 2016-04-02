@@ -7,11 +7,11 @@ var port = process.env.PORT || 3000;
 
 server.listen(port, "0.0.0.0");
 console.log('on ', port);
-var messages = [];
 
 var router = express.Router();
-router.get('/', function (req, res) {
-  res.json(messages);
+
+app.get('/', function(req, res){
+  res.sendFile(__dirname + '/index.html');
 });
 
 router.post('/', function (req, res) {
@@ -29,12 +29,16 @@ app.use(function (req, res, next) {
 app.use(router);
 
 function emit(socket, name, data) {
+  console.log('EMITTING', name, data);
+
   socket.emit('action', Object.assign({}, data, {
     type: name,
   }));
+  socket.emit(name, data);
 }
 
 function on(socket, name, cb) {
+  socket.on(name, cb);
   socket.on('action', (data) => {
     if (data.type === name) {
       cb(data);
@@ -54,13 +58,17 @@ io.on('connection', function (socket) {
 
   // when the client emits 'new message', this listens and executes
   on(socket, 'CREATE_MESSAGE', function (data) {
-    console.log('creating message', data);
-    var message = data.message;
-    message.date = (new Date).getTime();
-    
+    var message = data && data.message;
+
+    console.log('creating message', message);
+    Object.assign(message, {
+      text: message.text,
+      author: socket.user || { username: 'Anonymous' },
+      date: (new Date).getTime()
+    });
+
     // we tell the client to execute 'new message'
-    emit(socket.broadcast, 'RECEIVE_MESSAGE', { message });
-    emit(socket, 'RECEIVE_MESSAGE', { message });
+    socket.broadcast.emit('action', { type: 'RECEIVE_MESSAGE', message });
   });
 
   // when the client emits 'CREATE_USER', this listens and executes
@@ -113,12 +121,3 @@ io.on('connection', function (socket) {
     }
   });
 });
-/*
-console.log(1);
-var engine = require('engine.io');
-var server = new engine.Server();
-
-server.on('connection', function(socket){
-  console.log('here');
-  socket.send('hi');
-});*/
