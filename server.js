@@ -13,6 +13,9 @@ var router = express.Router();
 app.get('/', function(req, res){
   res.sendFile(__dirname + '/index.html');
 });
+app.get('/' + (process.env.ADMIN_ROUTE || 'admin'), function(req, res){
+  res.sendFile(__dirname + '/admin.html');
+});
 
 router.post('/', function (req, res) {
   if (req.body && req.body.author && req.body.text) {
