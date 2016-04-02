@@ -1,0 +1,24 @@
+{
+  "name": "chat-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jscodingnights/chat-server.git"
+  },
+  "author": "Adam Terlson <adam.terlson@gmail.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jscodingnights/chat-server/issues"
+  },
+  "homepage": "https://github.com/jscodingnights/chat-server#readme",
+  "dependencies": {
+    "body-parser": "^1.15.0",
+    "express": "^4.13.4",
+    "socket.io": "^1.4.5"
+  }
+}
