@@ -13,8 +13,8 @@
       #messages li { padding: 5px 10px; }
       #messages li:nth-child(odd) { background: #eee; }
     </style>
-    <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
-    <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+    <script src="//cdn.socket.io/socket.io-1.2.0.js"></script>
+    <script src="//code.jquery.com/jquery-1.11.1.js"></script>
   </head>
   <body>
     <h1>Messages</h1>
@@ -24,7 +24,7 @@
     </form>
     <script>
       // Security through obscurity
-      history.replaceState(null, null, '/');
+      //history.replaceState(null, null, '/');
 
       var socket = io();
       $('form').submit(function(){
