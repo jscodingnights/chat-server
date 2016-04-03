@@ -20,19 +20,19 @@ app.get('/' + (process.env.ADMIN_ROUTE || 'admin'), function(req, res){
   res.sendFile(__dirname + '/admin.html');
 });
 
-// router.post('/', function (req, res) {
-//   if (req.body && req.body.author && req.body.text) {
-//     messages.push(req.body);
-//   }
-//   res.json(req.body);
-// });
+router.post('/', function (req, res) {
+  if (req.body && req.body.author && req.body.text) {
+    messages.push(req.body);
+  }
+  res.json(req.body);
+});
 
-// app.use(bodyParser.json());
-// app.use(function (req, res, next) {
-//   console.log('req');
-//   next();
-// });
-// app.use(router);
+app.use(bodyParser.json());
+app.use(function (req, res, next) {
+  console.log('req');
+  next();
+});
+app.use(router);
 
 
 function emit(socket, name, data) {
