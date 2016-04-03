@@ -20,19 +20,20 @@ app.get('/' + (process.env.ADMIN_ROUTE || 'admin'), function(req, res){
   res.sendFile(__dirname + '/admin.html');
 });
 
-router.post('/', function (req, res) {
-  if (req.body && req.body.author && req.body.text) {
-    messages.push(req.body);
-  }
-  res.json(req.body);
-});
+// router.post('/', function (req, res) {
+//   if (req.body && req.body.author && req.body.text) {
+//     messages.push(req.body);
+//   }
+//   res.json(req.body);
+// });
 
-app.use(bodyParser.json());
-app.use(function (req, res, next) {
-  console.log('req');
-  next();
-});
-app.use(router);
+// app.use(bodyParser.json());
+// app.use(function (req, res, next) {
+//   console.log('req');
+//   next();
+// });
+// app.use(router);
+
 
 function emit(socket, name, data) {
   console.log('EMITTING', name, data);
@@ -54,30 +55,29 @@ function on(socket, name, cb) {
 
 // Chatroom
 
-// usernames which are currently connected to the chat
-var usernames = {};
-var numUsers = 0;
+// members which are currently connected to the chat
+var members = [];
+var usernameNum = 0;
 
 io.on('connection', function (socket) {
   console.log('connected!');
 
-  numUsers++;
-
   socket.user = {
-    username: 'Anonymous ' + numUsers
+    username: 'Anonymous',
+    created: (new Date).getTime()
   };
 
+  // add the client's username to the global list
+  members.push(socket.user);
+
+  emit(socket, 'RECEIVE_MEMBERS', { members });
+  emit(socket.broadcast, 'RECEIVE_MEMBERS', { members });
   emit(socket.broadcast, 'MEMBER_JOIN', { user: socket.user });
-
-
-
-
 
   // when the client emits 'new message', this listens and executes
   on(socket, 'CREATE_MESSAGE', function (data) {
     var message = data && data.message;
 
-    console.log('creating message', message);
     Object.assign(message, {
       text: message.text,
       author: socket.user || { username: 'Anonymous' },
@@ -90,43 +90,31 @@ io.on('connection', function (socket) {
 
   // when the client emits 'UPDATE_USER', this listens and executes
   on(socket, 'UPDATE_USER', function (event) {
-    console.log('create', event);
-    var user = event.user;
-    user.created = (new Date).getTime();
-    console.log('adding user', user.username);
-    // we store the username in the socket session for this client
-    socket.user = user;
-    // add the client's username to the global list
-    usernames[user.username] = user;
+    if (!event || !event.user || !event.user.username) {
+      return;
+    }
+
+    var userUpdate = {
+      username: event.user.username
+    };
+
+    var user = socket.user;
+
+    Object.assign(user, userUpdate);
+
     emit(socket, 'RECEIVE_USER', { user });
-    
+
     // echo globally (all clients) that a person has connected
-    emit(socket.broadcast, 'MEMBER_UPDATE', {
-      user: socket.user,
-      numUsers: numUsers
-    });
+    emit(socket.broadcast, 'RECEIVE_MEMBERS', { members });
   });
 
-  // when the client emits 'typing', we broadcast it to others
-  on(socket, 'typing', function () {
-    emit(socket.broadcast, 'typing', {
-      username: socket.username
-    });
-  });
-
-  // when the client emits 'stop typing', we broadcast it to others
-  on(socket, 'stop typing', function () {
-    emit(socket.broadcast, 'stop typing', {
-      username: socket.username
-    });
-  });
-
-  // when the user disconnects.. perform this
   on(socket, 'disconnect', function () {
-    delete usernames[socket.user.username];
-    --numUsers;
+    members = members.filter((user) => {
+      return user !== socket.user;
+    });
 
     // echo globally that this client has left
-    emit(socket.broadcast, 'MEMBER_LEAVE', { user: socket.user })
+    emit(socket.broadcast, 'MEMBER_LEAVE', { user: socket.user });
+    emit(socket.broadcast, 'RECEIVE_MEMBERS', { members });
   });
 });

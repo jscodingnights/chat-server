@@ -9,6 +9,12 @@
       form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
       form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
       form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+
+      .system { color: gray; }
+
+      #members { float: right; border: 1px solid black; width: 400px; }
+      #members ul { list-style-type: none; margin: 0; padding: 0; }
+      #members li { margin-bottom: 10px; }
       #messages { list-style-type: none; margin: 0; padding: 0; }
       #messages li { padding: 5px 10px; }
       #messages li:nth-child(odd) { background: #eee; }
@@ -17,6 +23,11 @@
     <script src="//code.jquery.com/jquery-1.11.1.js"></script>
   </head>
   <body>
+    <div id="members">
+      <h1>Members (<span class="count">0</span>)</h1>
+      <ul>
+      </ul>
+    </div>
     <h1>Messages</h1>
     <ul id="messages"></ul>
     <form action="">
@@ -35,13 +46,35 @@
         return false;
       });
 
-      function appendMessage({ message: { text, author } }) {
+const appState = {
+    user: {
+        username: 'Adam'
+    }
+};
+
+socket.on('RECEIVE_USER', (incomingMessage) => {
+    appState.user = incomingMessage.user;
+});
+
+// Give the server an update of your user details
+socket.emit('UPDATE_USER', appState.user);
+
+      function updateMembers(members) {
+        $('#members ul').empty();
+        $('#members .count').text(members.length)
+
+        members.forEach(({ username }) => {
+          $('#members ul').append($('<li>').text(username));
+        });
+      }
+
+      function appendMessage({ text, author }) {
         var username = author && author.username;
         $('#messages').append($('<li>').text(`${username || 'You'} - ${text}`));
       }
 
       function appendSystem({ type, user }) {
-        var details = $('<em>');
+        var details = $('<em class="system">');
         details.append(type + ' - ');
 
         if (user) {
@@ -54,7 +87,9 @@
       function onAction(data) {
         switch (data.type) {
           case 'RECEIVE_MESSAGE':
-            return appendMessage(data);
+            return appendMessage(data.message);
+          case 'RECEIVE_MEMBERS':
+            return updateMembers(data.members);
           default:
             return appendSystem(data);
         }
