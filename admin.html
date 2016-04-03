@@ -34,11 +34,35 @@
         $('#m').val('');
         return false;
       });
-      function appendMessage({ message: { text, author } }){
-        const username = author && author.username;
+
+      function appendMessage({ message: { text, author } }) {
+        var username = author && author.username;
         $('#messages').append($('<li>').text(`${username || 'You'} - ${text}`));
       }
-      socket.on('action', appendMessage);
+
+      function appendSystem({ type, user }) {
+        var details = $('<em>');
+        details.append(type + ' - ');
+
+        if (user) {
+          details.append('User: ' + user.username)
+        }
+
+        $('#messages').append($('<li>').html(details));
+      }
+
+      function onAction(data) {
+        switch (data.type) {
+          case 'RECEIVE_MESSAGE':
+            return appendMessage(data);
+          default:
+            return appendSystem(data);
+        }
+      }
+
+      socket.on('action', onAction);
+
+      socket.on()
     </script>
   </body>
 </html>

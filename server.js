@@ -57,7 +57,18 @@ var numUsers = 0;
 
 io.on('connection', function (socket) {
   console.log('connected!');
-  var addedUser = false;
+
+  numUsers++;
+
+  socket.user = {
+    username: 'Anonymous ' + numUsers
+  };
+
+  emit(socket.broadcast, 'MEMBER_JOIN', { user: socket.user });
+
+
+
+
 
   // when the client emits 'new message', this listens and executes
   on(socket, 'CREATE_MESSAGE', function (data) {
@@ -74,8 +85,8 @@ io.on('connection', function (socket) {
     socket.broadcast.emit('action', { type: 'RECEIVE_MESSAGE', message });
   });
 
-  // when the client emits 'CREATE_USER', this listens and executes
-  on(socket, 'CREATE_USER', function (event) {
+  // when the client emits 'UPDATE_USER', this listens and executes
+  on(socket, 'UPDATE_USER', function (event) {
     console.log('create', event);
     var user = event.user;
     user.created = (new Date).getTime();
@@ -84,12 +95,10 @@ io.on('connection', function (socket) {
     socket.user = user;
     // add the client's username to the global list
     usernames[user.username] = user;
-    ++numUsers;
     addedUser = true;
-    user.username = 'new username';
     emit(socket, 'LOGIN_USER', { user });
     // echo globally (all clients) that a person has connected
-    emit(socket.broadcast, 'user joined', {
+    emit(socket.broadcast, 'MEMBER_UPDATE', {
       user: socket.user,
       numUsers: numUsers
     });
@@ -110,17 +119,11 @@ io.on('connection', function (socket) {
   });
 
   // when the user disconnects.. perform this
-  socket.on('disconnect', function () {
-    // remove the username from global usernames list
-    if (addedUser) {
-      delete usernames[socket.user.username];
-      --numUsers;
+  on(socket, 'disconnect', function () {
+    delete usernames[socket.user.username];
+    --numUsers;
 
-      // echo globally that this client has left
-      emit(socket.broadcast, 'user left', {
-        username: socket.username,
-        numUsers: numUsers
-      });
-    }
+    // echo globally that this client has left
+    emit(socket.broadcast, 'MEMBER_LEAVE', { user: socket.user })
   });
 });
