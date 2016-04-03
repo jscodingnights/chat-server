@@ -102,7 +102,8 @@ io.on('connection', function (socket) {
     var user = Object.assign(socket.user, userUpdate);
 
     emit(socket, 'RECEIVE_USER', { user });
-    emit(socket.broadcast, 'MEMBER_UPDATE', { oldUser, user });
+    emit(socket.broadcast, 'USER_UPDATE', { oldUser, user });
+    emit(socket, 'RECEIVE_MEMBERS', { members });
     emit(socket.broadcast, 'RECEIVE_MEMBERS', { members });
   });
 

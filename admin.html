@@ -4,20 +4,66 @@
   <head>
     <title>JS Coding Nights Chat Monitor</title>
     <style>
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { font: 13px Helvetica, Arial; }
-      form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
-      form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
-      form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+      * { 
+        margin: 0; 
+        padding: 0; 
+        box-sizing: border-box; 
+      }
+      body { 
+        font: 13px Helvetica, Arial; 
+        padding-bottom: 50px; 
+      }
+      form { 
+        background: #000; 
+        padding: 3px; 
+        position: fixed; 
+        bottom: 0; 
+        width: 100%; 
+      }
+      form input { 
+        border: 0; 
+        padding: 10px; 
+        width: 90%; 
+        margin-right: .5%; 
+      }
+      form button { 
+        width: 9%; 
+        background: rgb(130, 224, 255); 
+        border: none; 
+        padding: 10px; 
+      }
 
-      .system { color: gray; }
+      .system { 
+        color: gray; 
+      }
 
-      #members { float: right; border: 1px solid black; width: 400px; }
-      #members ul { list-style-type: none; margin: 0; padding: 0; }
-      #members li { margin-bottom: 10px; }
-      #messages { list-style-type: none; margin: 0; padding: 0; }
-      #messages li { padding: 5px 10px; }
-      #messages li:nth-child(odd) { background: #eee; }
+      #members { 
+        position: fixed; 
+        top 10px; 
+        right: 10px; 
+        border: 1px solid black; 
+        width: 400px; 
+        background-color: white;
+      }
+      #members ul { 
+        list-style-type: none; 
+        margin: 0; 
+        padding: 0; 
+      }
+      #members li { 
+        margin-bottom: 10px; 
+      }
+      #messages { 
+        list-style-type: none; 
+        margin: 0 0 25px 0; 
+        padding: 0; 
+      }
+      #messages li { 
+        padding: 5px 10px; 
+      }
+      #messages li:nth-child(odd) { 
+        background: #eee; 
+      }
     </style>
     <script src="//cdn.socket.io/socket.io-1.2.0.js"></script>
     <script src="//code.jquery.com/jquery-1.11.1.js"></script>
@@ -37,11 +83,11 @@
       // Security through obscurity
       //history.replaceState(null, null, '/');
 
-      var socket = io();
+      var socket = window.socket = io();
       $('form').submit(function(){
         var message = { message: { text: $('#m').val() } };
         socket.emit('CREATE_MESSAGE', message);
-        appendMessage(message);
+        appendMessage(message.message);
         $('#m').val('');
         return false;
       });
@@ -57,7 +103,7 @@ socket.on('RECEIVE_USER', (incomingMessage) => {
 });
 
 // Give the server an update of your user details
-socket.emit('UPDATE_USER', appState.user);
+socket.emit('UPDATE_USER', appState);
 
       function updateMembers(members) {
         $('#members ul').empty();
@@ -71,6 +117,7 @@ socket.emit('UPDATE_USER', appState.user);
       function appendMessage({ text, author }) {
         var username = author && author.username;
         $('#messages').append($('<li>').text(`${username || 'You'} - ${text}`));
+        window.scrollTo(0,document.body.scrollHeight);
       }
 
       function appendSystem({ type, user, oldUser }) {
@@ -81,7 +128,7 @@ socket.emit('UPDATE_USER', appState.user);
           details.append(' User: ' + user.username);
         }
         if (oldUser) {
-          details.append('(Was: ' + oldUser.username + ')');
+          details.append(' (Was: ' + oldUser.username + ')');
         }
 
         $('#messages').append($('<li>').html(details));
