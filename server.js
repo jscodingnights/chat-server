@@ -98,13 +98,11 @@ io.on('connection', function (socket) {
       username: event.user.username
     };
 
-    var user = socket.user;
-
-    Object.assign(user, userUpdate);
+    var oldUser = Object.assign({}, socket.user);
+    var user = Object.assign(socket.user, userUpdate);
 
     emit(socket, 'RECEIVE_USER', { user });
-
-    // echo globally (all clients) that a person has connected
+    emit(socket.broadcast, 'MEMBER_UPDATE', { oldUser, user });
     emit(socket.broadcast, 'RECEIVE_MEMBERS', { members });
   });
 

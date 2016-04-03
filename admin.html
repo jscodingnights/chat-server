@@ -73,12 +73,15 @@ socket.emit('UPDATE_USER', appState.user);
         $('#messages').append($('<li>').text(`${username || 'You'} - ${text}`));
       }
 
-      function appendSystem({ type, user }) {
+      function appendSystem({ type, user, oldUser }) {
         var details = $('<em class="system">');
-        details.append(type + ' - ');
+        details.append(type + ' -');
 
         if (user) {
-          details.append('User: ' + user.username)
+          details.append(' User: ' + user.username);
+        }
+        if (oldUser) {
+          details.append('(Was: ' + oldUser.username + ')');
         }
 
         $('#messages').append($('<li>').html(details));
