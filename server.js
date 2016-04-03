@@ -1,3 +1,6 @@
+// Add welcome message
+// 
+
 var express = require('express');
 var bodyParser = require('body-parser');
 var app = express();
@@ -95,8 +98,8 @@ io.on('connection', function (socket) {
     socket.user = user;
     // add the client's username to the global list
     usernames[user.username] = user;
-    addedUser = true;
-    emit(socket, 'LOGIN_USER', { user });
+    emit(socket, 'RECEIVE_USER', { user });
+    
     // echo globally (all clients) that a person has connected
     emit(socket.broadcast, 'MEMBER_UPDATE', {
       user: socket.user,
