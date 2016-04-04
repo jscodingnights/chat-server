@@ -90,6 +90,7 @@ io.on('connection', function (socket) {
 
   // when the client emits 'UPDATE_USER', this listens and executes
   on(socket, 'UPDATE_USER', function (event) {
+    console.log(event);
     if (!event || !event.user || !event.user.username) {
       return;
     }
