@@ -4,35 +4,133 @@
   <head>
     <title>JS Coding Nights Chat Monitor</title>
     <style>
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { font: 13px Helvetica, Arial; }
-      form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
-      form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
-      form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
-      #messages { list-style-type: none; margin: 0; padding: 0; }
-      #messages li { padding: 5px 10px; }
-      #messages li:nth-child(odd) { background: #eee; }
+      * { 
+        margin: 0; 
+        padding: 0; 
+        box-sizing: border-box; 
+      }
+      body { 
+        font: 13px Helvetica, Arial; 
+        padding-bottom: 50px; 
+      }
+      form { 
+        background: #000; 
+        padding: 3px; 
+        position: fixed; 
+        bottom: 0; 
+        width: 100%; 
+      }
+      form input { 
+        border: 0; 
+        padding: 10px; 
+        width: 90%; 
+        margin-right: .5%; 
+      }
+      form button { 
+        width: 9%; 
+        background: rgb(130, 224, 255); 
+        border: none; 
+        padding: 10px; 
+      }
+
+      .system { 
+        color: gray; 
+      }
+
+      #members { 
+        position: fixed; 
+        top 10px; 
+        right: 10px; 
+        border: 1px solid black; 
+        width: 400px; 
+        background-color: white;
+      }
+      #members ul { 
+        list-style-type: none; 
+        margin: 0; 
+        padding: 0; 
+      }
+      #members li { 
+        margin-bottom: 10px; 
+      }
+      #messages { 
+        list-style-type: none; 
+        margin: 0 0 25px 0; 
+        padding: 0; 
+      }
+      #messages li { 
+        padding: 5px 10px; 
+      }
+      #messages li:nth-child(odd) { 
+        background: #eee; 
+      }
     </style>
+    <script src="//cdn.socket.io/socket.io-1.2.0.js"></script>
+    <script src="//code.jquery.com/jquery-1.11.1.js"></script>
   </head>
   <body>
+    <div id="members">
+      <h1>Members (<span class="count">0</span>)</h1>
+      <ul>
+      </ul>
+    </div>
     <h1>Messages</h1>
     <ul id="messages"></ul>
-    <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
-    <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
     <script>
-      var socket = io();
+      // Security through obscurity
+      //history.replaceState(null, null, '/');
+
+      var socket = window.socket = io();
       $('form').submit(function(){
         var message = { message: { text: $('#m').val() } };
         socket.emit('CREATE_MESSAGE', message);
-        appendMessage(message);
+        appendMessage(message.message);
         $('#m').val('');
         return false;
       });
-      function appendMessage({ message: { text, author } }){
-        const username = author && author.username;
-        $('#messages').append($('<li>').text(`${username || 'You'} - ${text}`));
+
+
+      function updateMembers(members) {
+        $('#members ul').empty();
+        $('#members .count').text(members.length)
+
+        members.forEach(({ username }) => {
+          $('#members ul').append($('<li>').text(username));
+        });
       }
-      socket.on('action', appendMessage);
+
+      function appendMessage({ text, author }) {
+        var username = author && author.username;
+        $('#messages').append($('<li>').text(`${username || 'You'} - ${text}`));
+        window.scrollTo(0,document.body.scrollHeight);
+      }
+
+      function appendSystem({ type, user, oldUser }) {
+        var details = $('<em class="system">');
+        details.append(type + ' -');
+
+        if (user) {
+          details.append(' User: ' + user.username);
+        }
+        if (oldUser) {
+          details.append(' (Was: ' + oldUser.username + ')');
+        }
+
+        $('#messages').append($('<li>').html(details));
+      }
+
+      function onAction(data) {
+        switch (data.type) {
+          case 'RECEIVE_MESSAGE':
+            return appendMessage(data.message);
+          case 'RECEIVE_MEMBERS':
+            return updateMembers(data.members);
+          default:
+            return appendSystem(data);
+        }
+      }
+
+      socket.on('action', onAction);
     </script>
   </body>
 </html>
