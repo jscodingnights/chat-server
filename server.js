@@ -85,7 +85,8 @@ io.on('connection', function (socket) {
     });
 
     // we tell the client to execute 'new message'
-    emit(socket.broadcast, 'RECEIVE_MESSAGE', { message });
+    socket.broadcast.emit('action', { type: 'RECEIVE_MESSAGE', message });
+    socket.broadcast.emit('RECEIVE_MESSAGE', { type: 'RECEIVE_MESSAGE', message });
   });
 
   // when the client emits 'UPDATE_USER', this listens and executes
